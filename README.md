@@ -18,12 +18,17 @@ Projetado para rodar com alta performance e sem distrações títulos de **Ninte
 
 ---
 
-## 📥 Como Instalar e Rodar
+## 📥 Downloads Prontos (Executáveis)
 
-### Opção 1: Baixar Binários Prontos (GitHub Releases)
-Vá na aba [Releases](https://github.com/JulioJCLF/tico-launcher/releases) do repositório:
-* **macOS:** Baixe o arquivo `.dmg`, abra e arraste o **Tico** para sua pasta `/Applications`.
-* **Windows:** Baixe o instalador `.msi` ou o executável portátil `.exe` e execute diretamente.
+Você pode baixar os executáveis prontos diretamente na aba **[Releases](https://github.com/JulioJCLF/tico-launcher/releases)**:
+
+### 🪟 Windows (10 / 11):
+* **[📦 Baixar ZIP Portátil com o EXE (Tico-Windows-Portable-x64.zip)](https://github.com/JulioJCLF/tico-launcher/releases/download/v0.1.0/Tico-Windows-Portable-x64.zip)** — *Não precisa instalar! Basta descompactar o `.zip` e dar dois cliques em `Tico.exe`.*
+* **[⚙️ Baixar Instalador Windows (.exe)](https://github.com/JulioJCLF/tico-launcher/releases/download/v0.1.0/Tico_0.1.0_x64-setup.exe)** — *Instalador clássico com assistente e atalhos na Área de Trabalho e Menu Iniciar.*
+* **[🗂️ Baixar Pacote MSI (.msi)](https://github.com/JulioJCLF/tico-launcher/releases/download/v0.1.0/Tico_0.1.0_x64_en-US.msi)** — *Instalador Windows Installer.*
+
+### 🍏 macOS (Apple Silicon M1/M2/M3/M4):
+* **[💿 Baixar Imagem de Disco (.dmg)](https://github.com/JulioJCLF/tico-launcher/releases/download/v0.1.0/Tico_0.1.0_aarch64.dmg)** — *Abra o `.dmg` e arraste o **Tico** para sua pasta `/Applications`.*
 
 ---
 

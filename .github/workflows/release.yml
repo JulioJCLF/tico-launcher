@@ -48,6 +48,23 @@ jobs:
           tagName: v__VERSION__
           releaseName: 'Tico v__VERSION__'
           releaseBody: 'Frontend de emuladores retro para macOS e Windows.'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Package Portable Windows ZIP with EXE
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          New-Item -ItemType Directory -Force -Path "Tico-Portable"
+          $exe = Get-ChildItem -Path "src-tauri/target/release" -Filter "*.exe" -Recurse | Where-Object { $_.Name -eq "app.exe" -or $_.Name -eq "Tico.exe" } | Select-Object -First 1
+          if ($exe) {
+            Write-Host "Found binary: $($exe.FullName)"
+            Copy-Item $exe.FullName -Destination "Tico-Portable/Tico.exe"
+            Compress-Archive -Path "Tico-Portable/*" -DestinationPath "Tico-Windows-Portable-x64.zip" -Force
+            gh release upload v0.1.0 "Tico-Windows-Portable-x64.zip" --clobber
+          } else {
+            Write-Warning "Binary not found in src-tauri/target/release"
+          }

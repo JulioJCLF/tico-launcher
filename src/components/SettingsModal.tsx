@@ -1019,6 +1019,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
+          {/* Windows Portable ZIP Download */}
+          <div className="p-4 rounded-2xl bg-black/20 border border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Download className="w-5 h-5 text-blue-400 opacity-90" />
+              <div>
+                <div className="text-xs font-semibold text-white">Versão Portátil para Windows (.zip com .exe)</div>
+                <div className="text-[11px] text-zinc-400">
+                  Baixe o executável direto Tico.exe compactado em .zip para rodar sem instalar
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() =>
+                handleOpenUrl(
+                  'https://github.com/JulioJCLF/tico-launcher/releases/download/v0.1.0/Tico-Windows-Portable-x64.zip',
+                  'ZIP do Windows'
+                )
+              }
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white hover:bg-zinc-200 text-zinc-950 font-semibold text-xs shadow-md cursor-pointer transition-all"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Baixar ZIP (.exe)</span>
+            </button>
+          </div>
+
           <hr className="border-white/10" />
 
           {/* Gamepad Info */}
