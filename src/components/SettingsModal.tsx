@@ -16,6 +16,7 @@ import {
   openEmulatorGui,
   chooseAndImportPs2Bios,
   getPlatformInfo,
+  installEmulatorCask,
 } from '../services/emulatorService';
 import { sfx } from '../utils/sfx';
 import {
@@ -69,10 +70,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [ps1Dir, setPs1Dir] = useState(config.ps1_rom_dir);
   const [ps2Dir, setPs2Dir] = useState(config.ps2_rom_dir);
   const [ps3Dir, setPs3Dir] = useState(config.ps3_rom_dir);
+  const [switchDir, setSwitchDir] = useState(config.switch_rom_dir || '~/Games/ROMs/Switch');
+  const [snesDir, setSnesDir] = useState(config.snes_rom_dir || '~/Games/ROMs/SNES');
+  const [nesDir, setNesDir] = useState(config.nes_rom_dir || '~/Games/ROMs/NES');
+  const [gbaDir, setGbaDir] = useState(config.gba_rom_dir || '~/Games/ROMs/GBA');
+  const [gbcDir, setGbcDir] = useState(config.gbc_rom_dir || '~/Games/ROMs/GBC');
+  const [gbDir, setGbDir] = useState(config.gb_rom_dir || '~/Games/ROMs/GB');
   const [savedNotice, setSavedNotice] = useState(false);
 
   const [installingDuck, setInstallingDuck] = useState(false);
   const [installingPcsx2, setInstallingPcsx2] = useState(false);
+  const [installingCask, setInstallingCask] = useState<string | null>(null);
   const [checkingEmulators, setCheckingEmulators] = useState(false);
   const [pcsx2Bios, setPcsx2Bios] = useState<Pcsx2BiosStatus | null>(null);
   const [importingBios, setImportingBios] = useState(false);
@@ -107,9 +115,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       ps1_rom_dir: ps1Dir,
       ps2_rom_dir: ps2Dir,
       ps3_rom_dir: ps3Dir,
+      switch_rom_dir: switchDir,
+      snes_rom_dir: snesDir,
+      nes_rom_dir: nesDir,
+      gba_rom_dir: gbaDir,
+      gbc_rom_dir: gbcDir,
+      gb_rom_dir: gbDir,
     });
     setSavedNotice(true);
     setTimeout(() => setSavedNotice(false), 2500);
+  };
+
+  const handleInstallCask = async (emulator: string, label: string) => {
+    sfx.playSelect();
+    setInstallingCask(emulator);
+    setBanner('info', `Instalando ${label} em segundo plano (${isWin ? 'Winget' : 'Brew'})...`);
+    try {
+      const res = await installEmulatorCask(emulator);
+      if (res.success) {
+        sfx.playSelect();
+        setBanner('success', `✓ ${res.message}`);
+        const updated = await checkEmulators();
+        onUpdateEmulatorStatus(updated);
+      } else {
+        sfx.playBack();
+        setBanner('error', res.message);
+      }
+    } catch {
+      sfx.playBack();
+      setBanner('error', `Falha ao tentar instalar ${label}.`);
+    } finally {
+      setInstallingCask(null);
+    }
   };
 
   const handleOpenUrl = async (url: string, name: string) => {
@@ -200,15 +237,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         updated.ps1_installed,
         updated.ps2_installed,
         updated.ps3_installed,
+        updated.switch_installed,
+        updated.snes_installed,
+        updated.nes_installed,
+        updated.mgba_installed,
       ].filter(Boolean).length;
 
-      if (count === 3) {
+      if (count === 7) {
         sfx.playSelect();
-        setBanner('success', 'Excelente! Todos os 3 emuladores (PS1, PS2, PS3) estão prontos!');
+        setBanner('success', 'Excelente! Todos os 7 emuladores estão instalados e prontos!');
       } else {
         setBanner(
           'info',
-          `Verificação concluída: ${count} de 3 emuladores detectados no sistema.`
+          `Verificação concluída: ${count} de 7 emuladores detectados no sistema.`
         );
       }
     } finally {
@@ -583,6 +624,214 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 )}
               </div>
             </div>
+
+            {/* Ryujinx (Switch) */}
+            <div className="p-4 rounded-2xl bg-black/25 border border-white/5 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {emulatorStatus.switch_installed ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+                  )}
+                  <div>
+                    <div className="text-xs font-semibold text-white flex items-center gap-2">
+                      <span>Ryujinx</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-300 font-normal border border-red-500/20">
+                        Nintendo Switch
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-zinc-400">{emulatorStatus.switch_path}</div>
+                  </div>
+                </div>
+
+                {emulatorStatus.switch_installed ? (
+                  <div className="flex items-center gap-2">
+                    <span className="px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-semibold border border-emerald-500/20">
+                      ✓ Instalado
+                    </span>
+                    <button
+                      onClick={() => handleOpenGui('ryujinx')}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-medium border border-white/10 cursor-pointer transition-all"
+                    >
+                      <Sliders className="w-3 h-3 opacity-80" />
+                      <span>Abrir Painel</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleOpenUrl('https://ryujinx.org/download', 'Ryujinx')}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold shadow cursor-pointer transition-all"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Baixar Ryujinx</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Snes9x (SNES) */}
+            <div className="p-4 rounded-2xl bg-black/25 border border-white/5 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {emulatorStatus.snes_installed ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+                  )}
+                  <div>
+                    <div className="text-xs font-semibold text-white flex items-center gap-2">
+                      <span>Snes9x</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 font-normal border border-purple-500/20">
+                        Super Nintendo
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-zinc-400">{emulatorStatus.snes_path}</div>
+                  </div>
+                </div>
+
+                {emulatorStatus.snes_installed ? (
+                  <div className="flex items-center gap-2">
+                    <span className="px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-semibold border border-emerald-500/20">
+                      ✓ Instalado
+                    </span>
+                    <button
+                      onClick={() => handleOpenGui('snes9x')}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-medium border border-white/10 cursor-pointer transition-all"
+                    >
+                      <Sliders className="w-3 h-3 opacity-80" />
+                      <span>Abrir Painel</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleInstallCask('snes9x', 'Snes9x')}
+                      disabled={installingCask === 'snes9x'}
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-medium border border-white/10 cursor-pointer transition-all disabled:opacity-50"
+                    >
+                      <Terminal className="w-3.5 h-3.5 opacity-80" />
+                      <span>{installingCask === 'snes9x' ? 'Instalando...' : isWin ? 'Instalar (Winget)' : 'Instalar via Brew'}</span>
+                    </button>
+                    <button
+                      onClick={() => handleOpenUrl('https://github.com/snes9xgit/snes9x/releases', 'Snes9x')}
+                      className="p-1.5 rounded-full bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white border border-white/10"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Mesen / RetroArch (NES) */}
+            <div className="p-4 rounded-2xl bg-black/25 border border-white/5 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {emulatorStatus.nes_installed ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+                  )}
+                  <div>
+                    <div className="text-xs font-semibold text-white flex items-center gap-2">
+                      <span>Mesen / RetroArch</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-300 font-normal border border-rose-500/20">
+                        Nintendo (NES)
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-zinc-400">{emulatorStatus.nes_path}</div>
+                  </div>
+                </div>
+
+                {emulatorStatus.nes_installed ? (
+                  <div className="flex items-center gap-2">
+                    <span className="px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-semibold border border-emerald-500/20">
+                      ✓ Instalado
+                    </span>
+                    <button
+                      onClick={() => handleOpenGui('mesen')}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-medium border border-white/10 cursor-pointer transition-all"
+                    >
+                      <Sliders className="w-3 h-3 opacity-80" />
+                      <span>Abrir Painel</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleInstallCask('retroarch', 'RetroArch')}
+                      disabled={installingCask === 'retroarch'}
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-medium border border-white/10 cursor-pointer transition-all disabled:opacity-50"
+                    >
+                      <Terminal className="w-3.5 h-3.5 opacity-80" />
+                      <span>{installingCask === 'retroarch' ? 'Instalando...' : isWin ? 'Instalar RetroArch' : 'Instalar via Brew'}</span>
+                    </button>
+                    <button
+                      onClick={() => handleOpenUrl('https://github.com/SourMesen/Mesen2/releases', 'Mesen')}
+                      className="p-1.5 rounded-full bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white border border-white/10"
+                      title="Baixar Mesen oficial"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* mGBA (GBA, GBC, GB) */}
+            <div className="p-4 rounded-2xl bg-black/25 border border-white/5 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {emulatorStatus.mgba_installed ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+                  )}
+                  <div>
+                    <div className="text-xs font-semibold text-white flex items-center gap-2">
+                      <span>mGBA</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 font-normal border border-emerald-500/20">
+                        Game Boy (Advance / Color / Clássico)
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-zinc-400">{emulatorStatus.mgba_path}</div>
+                  </div>
+                </div>
+
+                {emulatorStatus.mgba_installed ? (
+                  <div className="flex items-center gap-2">
+                    <span className="px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-semibold border border-emerald-500/20">
+                      ✓ Instalado
+                    </span>
+                    <button
+                      onClick={() => handleOpenGui('mgba')}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-medium border border-white/10 cursor-pointer transition-all"
+                    >
+                      <Sliders className="w-3 h-3 opacity-80" />
+                      <span>Abrir Painel</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleInstallCask('mgba', 'mGBA')}
+                      disabled={installingCask === 'mgba'}
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold shadow cursor-pointer transition-all disabled:opacity-50"
+                    >
+                      <Download className={`w-3.5 h-3.5 ${installingCask === 'mgba' ? 'animate-bounce' : ''}`} />
+                      <span>{installingCask === 'mgba' ? 'Instalando...' : 'Instalar com 1 Clique'}</span>
+                    </button>
+                    <button
+                      onClick={() => handleOpenUrl('https://mgba.io/downloads.html', 'mGBA')}
+                      className="p-1.5 rounded-full bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white border border-white/10"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <hr className="border-white/10" />
@@ -663,6 +912,84 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 type="text"
                 value={ps3Dir}
                 onChange={(e) => setPs3Dir(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-2xl bg-black/30 border border-white/10 text-zinc-200 text-xs focus:outline-none focus:border-white/30 font-mono"
+              />
+            </div>
+
+            {/* Switch */}
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                Nintendo Switch (Ryujinx) — .nsp, .xci
+              </label>
+              <input
+                type="text"
+                value={switchDir}
+                onChange={(e) => setSwitchDir(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-2xl bg-black/30 border border-white/10 text-zinc-200 text-xs focus:outline-none focus:border-white/30 font-mono"
+              />
+            </div>
+
+            {/* SNES */}
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                Super Nintendo (Snes9x) — .smc, .sfc
+              </label>
+              <input
+                type="text"
+                value={snesDir}
+                onChange={(e) => setSnesDir(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-2xl bg-black/30 border border-white/10 text-zinc-200 text-xs focus:outline-none focus:border-white/30 font-mono"
+              />
+            </div>
+
+            {/* NES */}
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                Nintendo / Famicom (Mesen / RetroArch) — .nes
+              </label>
+              <input
+                type="text"
+                value={nesDir}
+                onChange={(e) => setNesDir(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-2xl bg-black/30 border border-white/10 text-zinc-200 text-xs focus:outline-none focus:border-white/30 font-mono"
+              />
+            </div>
+
+            {/* GBA */}
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                Game Boy Advance (mGBA) — .gba
+              </label>
+              <input
+                type="text"
+                value={gbaDir}
+                onChange={(e) => setGbaDir(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-2xl bg-black/30 border border-white/10 text-zinc-200 text-xs focus:outline-none focus:border-white/30 font-mono"
+              />
+            </div>
+
+            {/* GBC */}
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                Game Boy Color (mGBA) — .gbc
+              </label>
+              <input
+                type="text"
+                value={gbcDir}
+                onChange={(e) => setGbcDir(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-2xl bg-black/30 border border-white/10 text-zinc-200 text-xs focus:outline-none focus:border-white/30 font-mono"
+              />
+            </div>
+
+            {/* GB */}
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1.5">
+                Game Boy Clássico (mGBA) — .gb
+              </label>
+              <input
+                type="text"
+                value={gbDir}
+                onChange={(e) => setGbDir(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-2xl bg-black/30 border border-white/10 text-zinc-200 text-xs focus:outline-none focus:border-white/30 font-mono"
               />
             </div>

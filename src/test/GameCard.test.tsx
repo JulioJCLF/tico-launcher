@@ -77,4 +77,46 @@ describe('GameCard', () => {
 
     expect(screen.getByText('Demo')).toBeInTheDocument();
   });
+
+  it('renders badge for Nintendo Switch, SNES, and GBA', () => {
+    const switchGame: GameItem = {
+      id: 'switch-mario',
+      title: 'Super Mario Odyssey',
+      platform: 'switch',
+      cover_url: 'https://example.com/smo.jpg',
+      path: '/mock/smo.nsp',
+      isDemo: false,
+    };
+
+    const { rerender } = render(
+      <GameCard
+        game={switchGame}
+        isSelected={false}
+        isFavorite={false}
+        onClick={() => {}}
+      />
+    );
+
+    expect(screen.getByText('Switch')).toBeInTheDocument();
+
+    const gbaGame: GameItem = {
+      id: 'gba-sma4',
+      title: 'Super Mario Advance 4',
+      platform: 'gba',
+      cover_url: 'https://example.com/sma4.jpg',
+      path: '/mock/sma4.gba',
+      isDemo: false,
+    };
+
+    rerender(
+      <GameCard
+        game={gbaGame}
+        isSelected={false}
+        isFavorite={false}
+        onClick={() => {}}
+      />
+    );
+
+    expect(screen.getByText('GBA')).toBeInTheDocument();
+  });
 });

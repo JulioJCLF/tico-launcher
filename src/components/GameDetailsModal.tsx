@@ -31,6 +31,18 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
         return 'PCSX2 (Metal Native macOS)';
       case 'ps3':
         return 'RPCS3 (MoltenVK / Metal)';
+      case 'switch':
+        return 'Ryujinx (Nintendo Switch)';
+      case 'snes':
+        return 'Snes9x (Super Nintendo)';
+      case 'nes':
+        return 'Mesen / RetroArch (NES)';
+      case 'gba':
+        return 'mGBA (Game Boy Advance)';
+      case 'gbc':
+        return 'mGBA (Game Boy Color)';
+      case 'gb':
+        return 'mGBA (Game Boy)';
       default:
         return 'Emulador Padrão';
     }

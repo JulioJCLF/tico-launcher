@@ -7,10 +7,47 @@ use std::process::Command;
 pub struct Game {
     pub id: String,
     pub title: String,
-    pub platform: String, // "ps1", "ps2", "ps3"
+    pub platform: String, // "ps1", "ps2", "ps3", "switch", "snes", "nes", "gba", "gbc", "gb"
     pub path: String,
     pub cover_url: Option<String>,
     pub file_size: Option<String>,
+}
+
+fn get_base_rom_dir() -> PathBuf {
+    #[cfg(target_os = "windows")]
+    {
+        if let Some(docs) = dirs::document_dir() {
+            docs.join("Games").join("ROMs")
+        } else if let Some(home) = dirs::home_dir() {
+            home.join("Games").join("ROMs")
+        } else {
+            PathBuf::from("C:\\Games\\ROMs")
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/Users"));
+        home.join("Games").join("ROMs")
+    }
+}
+
+fn default_switch_dir() -> String {
+    get_base_rom_dir().join("Switch").to_string_lossy().to_string()
+}
+fn default_snes_dir() -> String {
+    get_base_rom_dir().join("SNES").to_string_lossy().to_string()
+}
+fn default_nes_dir() -> String {
+    get_base_rom_dir().join("NES").to_string_lossy().to_string()
+}
+fn default_gba_dir() -> String {
+    get_base_rom_dir().join("GBA").to_string_lossy().to_string()
+}
+fn default_gbc_dir() -> String {
+    get_base_rom_dir().join("GBC").to_string_lossy().to_string()
+}
+fn default_gb_dir() -> String {
+    get_base_rom_dir().join("GB").to_string_lossy().to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,39 +55,49 @@ pub struct AppConfig {
     pub ps1_rom_dir: String,
     pub ps2_rom_dir: String,
     pub ps3_rom_dir: String,
+    #[serde(default = "default_switch_dir")]
+    pub switch_rom_dir: String,
+    #[serde(default = "default_snes_dir")]
+    pub snes_rom_dir: String,
+    #[serde(default = "default_nes_dir")]
+    pub nes_rom_dir: String,
+    #[serde(default = "default_gba_dir")]
+    pub gba_rom_dir: String,
+    #[serde(default = "default_gbc_dir")]
+    pub gbc_rom_dir: String,
+    #[serde(default = "default_gb_dir")]
+    pub gb_rom_dir: String,
     pub duckstation_path: Option<String>,
     pub pcsx2_path: Option<String>,
     pub rpcs3_path: Option<String>,
+    pub ryujinx_path: Option<String>,
+    pub snes9x_path: Option<String>,
+    pub mesen_path: Option<String>,
+    pub mgba_path: Option<String>,
     pub favorites: Vec<String>,
     pub recent_games: Vec<String>,
 }
 
 impl Default for AppConfig {
     fn default() -> Self {
-        #[cfg(target_os = "windows")]
-        let base_roms = {
-            if let Some(docs) = dirs::document_dir() {
-                docs.join("Games").join("ROMs")
-            } else if let Some(home) = dirs::home_dir() {
-                home.join("Games").join("ROMs")
-            } else {
-                PathBuf::from("C:\\Games\\ROMs")
-            }
-        };
-
-        #[cfg(not(target_os = "windows"))]
-        let base_roms = {
-            let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/Users"));
-            home.join("Games").join("ROMs")
-        };
-
+        let base_roms = get_base_rom_dir();
         Self {
             ps1_rom_dir: base_roms.join("PS1").to_string_lossy().to_string(),
             ps2_rom_dir: base_roms.join("PS2").to_string_lossy().to_string(),
             ps3_rom_dir: base_roms.join("PS3").to_string_lossy().to_string(),
+            switch_rom_dir: base_roms.join("Switch").to_string_lossy().to_string(),
+            snes_rom_dir: base_roms.join("SNES").to_string_lossy().to_string(),
+            nes_rom_dir: base_roms.join("NES").to_string_lossy().to_string(),
+            gba_rom_dir: base_roms.join("GBA").to_string_lossy().to_string(),
+            gbc_rom_dir: base_roms.join("GBC").to_string_lossy().to_string(),
+            gb_rom_dir: base_roms.join("GB").to_string_lossy().to_string(),
             duckstation_path: None,
             pcsx2_path: None,
             rpcs3_path: None,
+            ryujinx_path: None,
+            snes9x_path: None,
+            mesen_path: None,
+            mgba_path: None,
             favorites: Vec::new(),
             recent_games: Vec::new(),
         }
@@ -65,6 +112,14 @@ pub struct EmulatorStatus {
     pub ps2_path: String,
     pub ps3_installed: bool,
     pub ps3_path: String,
+    pub switch_installed: bool,
+    pub switch_path: String,
+    pub snes_installed: bool,
+    pub snes_path: String,
+    pub nes_installed: bool,
+    pub nes_path: String,
+    pub mgba_installed: bool,
+    pub mgba_path: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -236,12 +291,15 @@ fn regex_cleaning(s: &str) -> String {
 }
 
 fn format_file_size(bytes: u64) -> String {
+    const KB: u64 = 1024;
     const MB: u64 = 1024 * 1024;
     const GB: u64 = MB * 1024;
     if bytes >= GB {
         format!("{:.1} GB", (bytes as f64) / (GB as f64))
-    } else {
+    } else if bytes >= MB {
         format!("{:.0} MB", (bytes as f64) / (MB as f64))
+    } else {
+        format!("{:.0} KB", (bytes as f64) / (KB as f64))
     }
 }
 
@@ -250,6 +308,11 @@ fn get_libretro_repo_name(platform: &str) -> Option<&'static str> {
         "ps1" => Some("Sony_-_PlayStation"),
         "ps2" => Some("Sony_-_PlayStation_2"),
         "ps3" => Some("Sony_-_PlayStation_3"),
+        "snes" => Some("Nintendo_-_Super_Nintendo_Entertainment_System"),
+        "nes" => Some("Nintendo_-_Nintendo_Entertainment_System"),
+        "gba" => Some("Nintendo_-_Game_Boy_Advance"),
+        "gbc" => Some("Nintendo_-_Game_Boy_Color"),
+        "gb" => Some("Nintendo_-_Game_Boy"),
         _ => None,
     }
 }
@@ -332,7 +395,13 @@ fn scan_roms(platform: String, dir_path: String) -> Vec<Game> {
         "ps1" => vec!["chd", "cue", "iso", "bin", "pbp", "m3u"],
         "ps2" => vec!["iso", "chd", "bin", "cso", "gz"],
         "ps3" => vec!["iso", "pkg", "bin"],
-        _ => vec!["iso", "chd", "bin"],
+        "switch" => vec!["nsp", "xci"],
+        "snes" => vec!["sfc", "smc", "fig", "zip", "7z"],
+        "nes" => vec!["nes", "unf", "fds", "zip", "7z"],
+        "gba" => vec!["gba", "zip", "7z"],
+        "gbc" => vec!["gbc", "zip", "7z"],
+        "gb" => vec!["gb", "zip", "7z"],
+        _ => vec!["iso", "chd", "bin", "zip"],
     };
 
     let covers_cache_dir = get_covers_dir().join(&platform);
@@ -439,6 +508,12 @@ fn scrape_all_covers() -> Result<ScrapeResult, String> {
         ("ps1", &config.ps1_rom_dir),
         ("ps2", &config.ps2_rom_dir),
         ("ps3", &config.ps3_rom_dir),
+        ("switch", &config.switch_rom_dir),
+        ("snes", &config.snes_rom_dir),
+        ("nes", &config.nes_rom_dir),
+        ("gba", &config.gba_rom_dir),
+        ("gbc", &config.gbc_rom_dir),
+        ("gb", &config.gb_rom_dir),
     ];
 
     for (platform, dir_path) in platforms {
@@ -513,6 +588,45 @@ fn find_windows_emulator(name: &str) -> Option<PathBuf> {
             candidates.push(PathBuf::from("C:\\RPCS3\\rpcs3.exe"));
             candidates.push(PathBuf::from("D:\\Emulators\\RPCS3\\rpcs3.exe"));
         }
+        "ryujinx" => {
+            candidates.push(PathBuf::from(&program_files).join("Ryujinx").join("Ryujinx.exe"));
+            candidates.push(PathBuf::from(&program_files).join("Ryujinx").join("ryujinx.exe"));
+            if !local_app_data.is_empty() {
+                candidates.push(PathBuf::from(&local_app_data).join("Programs").join("Ryujinx").join("Ryujinx.exe"));
+                candidates.push(PathBuf::from(&local_app_data).join("Ryujinx").join("Ryujinx.exe"));
+            }
+            candidates.push(PathBuf::from("C:\\Emulators\\Ryujinx\\Ryujinx.exe"));
+            candidates.push(PathBuf::from("C:\\Ryujinx\\Ryujinx.exe"));
+            candidates.push(PathBuf::from("D:\\Emulators\\Ryujinx\\Ryujinx.exe"));
+        }
+        "snes9x" => {
+            candidates.push(PathBuf::from(&program_files).join("Snes9x").join("snes9x-x64.exe"));
+            candidates.push(PathBuf::from(&program_files).join("Snes9x").join("snes9x.exe"));
+            candidates.push(PathBuf::from("C:\\Emulators\\Snes9x\\snes9x-x64.exe"));
+            candidates.push(PathBuf::from("C:\\Emulators\\Snes9x\\snes9x.exe"));
+            candidates.push(PathBuf::from("C:\\Snes9x\\snes9x-x64.exe"));
+        }
+        "mesen" => {
+            candidates.push(PathBuf::from(&program_files).join("Mesen").join("Mesen.exe"));
+            candidates.push(PathBuf::from("C:\\Emulators\\Mesen\\Mesen.exe"));
+            candidates.push(PathBuf::from("C:\\Mesen\\Mesen.exe"));
+            candidates.push(PathBuf::from(&program_files).join("FCEUX").join("fceux.exe"));
+            candidates.push(PathBuf::from("C:\\Emulators\\FCEUX\\fceux.exe"));
+        }
+        "mgba" => {
+            candidates.push(PathBuf::from(&program_files).join("mGBA").join("mGBA.exe"));
+            candidates.push(PathBuf::from(&program_files).join("mGBA").join("mgba.exe"));
+            candidates.push(PathBuf::from("C:\\Emulators\\mGBA\\mGBA.exe"));
+            candidates.push(PathBuf::from("C:\\mGBA\\mGBA.exe"));
+        }
+        "retroarch" => {
+            candidates.push(PathBuf::from(&program_files).join("RetroArch").join("retroarch.exe"));
+            if !local_app_data.is_empty() {
+                candidates.push(PathBuf::from(&local_app_data).join("Programs").join("RetroArch").join("retroarch.exe"));
+            }
+            candidates.push(PathBuf::from("C:\\Emulators\\RetroArch\\retroarch.exe"));
+            candidates.push(PathBuf::from("C:\\RetroArch\\retroarch.exe"));
+        }
         _ => {}
     }
 
@@ -524,6 +638,12 @@ fn find_macos_emulator(name: &str) -> Option<PathBuf> {
         "duckstation" => "DuckStation.app",
         "pcsx2" => "PCSX2.app",
         "rpcs3" => "RPCS3.app",
+        "ryujinx" => "Ryujinx.app",
+        "snes9x" => "Snes9x.app",
+        "mesen" => "Mesen.app",
+        "mgba" => "mGBA.app",
+        "retroarch" => "RetroArch.app",
+        "openemu" => "OpenEmu.app",
         _ => return None,
     };
     let app_path = PathBuf::from("/Applications").join(app_name);
@@ -549,6 +669,11 @@ fn get_default_emulator(name: &str) -> (bool, String) {
             "duckstation" => "C:\\Emulators\\DuckStation\\duckstation-qt-x64-ReleaseLTCG.exe",
             "pcsx2" => "C:\\Program Files\\PCSX2\\pcsx2-qt.exe",
             "rpcs3" => "C:\\Emulators\\RPCS3\\rpcs3.exe",
+            "ryujinx" => "C:\\Emulators\\Ryujinx\\Ryujinx.exe",
+            "snes9x" => "C:\\Emulators\\Snes9x\\snes9x-x64.exe",
+            "mesen" => "C:\\Emulators\\Mesen\\Mesen.exe",
+            "mgba" => "C:\\Program Files\\mGBA\\mGBA.exe",
+            "retroarch" => "C:\\Emulators\\RetroArch\\retroarch.exe",
             _ => "",
         };
         (false, fallback.to_string())
@@ -563,6 +688,11 @@ fn get_default_emulator(name: &str) -> (bool, String) {
             "duckstation" => "/Applications/DuckStation.app",
             "pcsx2" => "/Applications/PCSX2.app",
             "rpcs3" => "/Applications/RPCS3.app",
+            "ryujinx" => "/Applications/Ryujinx.app",
+            "snes9x" => "/Applications/Snes9x.app",
+            "mesen" => "/Applications/Mesen.app",
+            "mgba" => "/Applications/mGBA.app",
+            "retroarch" => "/Applications/RetroArch.app",
             _ => "",
         };
         (false, fallback.to_string())
@@ -579,6 +709,10 @@ fn check_emulators_installed() -> EmulatorStatus {
     let (ps1_installed, ps1_path) = get_default_emulator("duckstation");
     let (ps2_installed, ps2_path) = get_default_emulator("pcsx2");
     let (ps3_installed, ps3_path) = get_default_emulator("rpcs3");
+    let (switch_installed, switch_path) = get_default_emulator("ryujinx");
+    let (snes_installed, snes_path) = get_default_emulator("snes9x");
+    let (nes_installed, nes_path) = get_default_emulator("mesen");
+    let (mgba_installed, mgba_path) = get_default_emulator("mgba");
 
     EmulatorStatus {
         ps1_installed,
@@ -587,6 +721,14 @@ fn check_emulators_installed() -> EmulatorStatus {
         ps2_path,
         ps3_installed,
         ps3_path,
+        switch_installed,
+        switch_path,
+        snes_installed,
+        snes_path,
+        nes_installed,
+        nes_path,
+        mgba_installed,
+        mgba_path,
     }
 }
 
@@ -601,6 +743,10 @@ fn launch_game(
         "ps1" => "duckstation",
         "ps2" => "pcsx2",
         "ps3" => "rpcs3",
+        "switch" => "ryujinx",
+        "snes" => "snes9x",
+        "nes" => "mesen",
+        "gba" | "gbc" | "gb" => "mgba",
         _ => return Err(format!("Plataforma desconhecida: {}", platform)),
     };
 
@@ -617,6 +763,10 @@ fn launch_game(
             "duckstation" => "DuckStation (https://github.com/stenzek/duckstation/releases)",
             "pcsx2" => "PCSX2 (https://pcsx2.net/downloads)",
             "rpcs3" => "RPCS3 (https://rpcs3.net/download)",
+            "ryujinx" => "Ryujinx (https://ryujinx.org/download)",
+            "snes9x" => "Snes9x (https://github.com/snes9xgit/snes9x/releases)",
+            "mesen" => "Mesen (https://github.com/SourMesen/Mesen2/releases)",
+            "mgba" => "mGBA (https://mgba.io/downloads.html)",
             _ => "Emulador",
         };
         return Err(format!(
@@ -637,6 +787,18 @@ fn launch_game(
             }
             "ps3" => {
                 cmd.arg("--fullscreen").arg(&rom_path);
+            }
+            "switch" => {
+                cmd.arg(&rom_path);
+            }
+            "gba" | "gbc" | "gb" => {
+                cmd.arg("-f").arg(&rom_path);
+            }
+            "snes" => {
+                cmd.arg("-fullscreen").arg(&rom_path);
+            }
+            "nes" => {
+                cmd.arg(&rom_path);
             }
             _ => {
                 cmd.arg(&rom_path);
@@ -661,6 +823,18 @@ fn launch_game(
                 let bin = p.join("Contents/MacOS/RPCS3");
                 if bin.exists() { Some(bin) } else { None }
             }
+            "switch" => {
+                let bin = p.join("Contents/MacOS/Ryujinx");
+                if bin.exists() { Some(bin) } else { None }
+            }
+            "gba" | "gbc" | "gb" => {
+                let bin = p.join("Contents/MacOS/mGBA");
+                if bin.exists() { Some(bin) } else { None }
+            }
+            "snes" => {
+                let bin = p.join("Contents/MacOS/Snes9x");
+                if bin.exists() { Some(bin) } else { None }
+            }
             _ => None,
         };
 
@@ -675,6 +849,9 @@ fn launch_game(
                 }
                 "ps3" => {
                     cmd.arg("--fullscreen").arg(&rom_path);
+                }
+                "gba" | "gbc" | "gb" => {
+                    cmd.arg("-f").arg(&rom_path);
                 }
                 _ => {
                     cmd.arg(&rom_path);
@@ -693,6 +870,9 @@ fn launch_game(
                 }
                 "ps3" => {
                     cmd.arg("--fullscreen").arg(&rom_path);
+                }
+                "gba" | "gbc" | "gb" => {
+                    cmd.arg("-f").arg(&rom_path);
                 }
                 _ => {
                     cmd.arg(&rom_path);
@@ -871,6 +1051,87 @@ fn install_pcsx2_brew() -> Result<String, String> {
             Ok("PCSX2 instalado com sucesso em /Applications!".to_string())
         } else {
             Err("Homebrew retornou um erro ao tentar instalar o PCSX2.".to_string())
+        }
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
+        Err("Instalação automática suportada apenas no Windows e macOS.".to_string())
+    }
+}
+
+#[tauri::command]
+fn install_emulator_cask(emulator: String) -> Result<String, String> {
+    let emu_lower = emulator.to_lowercase();
+    #[cfg(target_os = "windows")]
+    {
+        let id = match emu_lower.as_str() {
+            "mgba" => "mGBA.mGBA",
+            "snes9x" => "Snes9x.Snes9x",
+            "retroarch" => "Libretro.RetroArch",
+            "pcsx2" => "PCSX2.PCSX2",
+            "duckstation" => "DuckStation.DuckStation",
+            "ryujinx" => "Ryujinx.Ryujinx",
+            _ => return Err(format!("Emulador {} desconhecido", emulator)),
+        };
+
+        let status = Command::new("winget")
+            .args(["install", "--id", id, "-e", "--accept-package-agreements", "--accept-source-agreements"])
+            .status();
+
+        if let Ok(st) = status {
+            if st.success() {
+                return Ok(format!("{} instalado com sucesso via Winget!", emulator));
+            }
+        }
+
+        let url = match emu_lower.as_str() {
+            "mgba" => "https://mgba.io/downloads.html",
+            "snes9x" => "https://github.com/snes9xgit/snes9x/releases",
+            "ryujinx" => "https://ryujinx.org/download",
+            _ => "https://github.com",
+        };
+        let _ = open_external_url(url.to_string());
+        Ok(format!("Abrindo página de download do {}...", emulator))
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let cask_name = match emu_lower.as_str() {
+            "mgba" => "mgba",
+            "snes9x" => "snes9x",
+            "retroarch" => "retroarch",
+            "pcsx2" => "pcsx2",
+            _ => {
+                let url = match emu_lower.as_str() {
+                    "ryujinx" => "https://ryujinx.org/download",
+                    "mesen" => "https://github.com/SourMesen/Mesen2/releases",
+                    _ => "https://github.com",
+                };
+                let _ = open_external_url(url.to_string());
+                return Ok(format!("Abrindo página de download do {}...", emulator));
+            }
+        };
+
+        let brew_path = if Path::new("/opt/homebrew/bin/brew").exists() {
+            "/opt/homebrew/bin/brew"
+        } else if Path::new("/usr/local/bin/brew").exists() {
+            "/usr/local/bin/brew"
+        } else {
+            return Err("Homebrew não encontrado no Mac.".to_string());
+        };
+
+        let status = Command::new(brew_path)
+            .arg("install")
+            .arg("--cask")
+            .arg(cask_name)
+            .status()
+            .map_err(|e| format!("Falha ao executar Homebrew: {}", e))?;
+
+        if status.success() {
+            Ok(format!("{} instalado com sucesso em /Applications!", emulator))
+        } else {
+            Err(format!("Homebrew retornou um erro ao tentar instalar o {}.", emulator))
         }
     }
 
@@ -1061,6 +1322,32 @@ fn open_finder_folder(target: String) -> Result<String, String> {
                 }
             }
         }
+        "ryujinx" => {
+            #[cfg(target_os = "windows")]
+            {
+                if let Some(data) = dirs::data_dir() {
+                    data.join("Ryujinx")
+                } else {
+                    PathBuf::from("C:\\Ryujinx")
+                }
+            }
+            #[cfg(target_os = "macos")]
+            {
+                let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+                PathBuf::from(&home)
+                    .join("Library")
+                    .join("Application Support")
+                    .join("Ryujinx")
+            }
+            #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+            {
+                if let Some(config) = dirs::config_dir() {
+                    config.join("Ryujinx")
+                } else {
+                    PathBuf::from(".ryujinx")
+                }
+            }
+        }
         _ => return Err(format!("Destino desconhecido: {}", target)),
     };
 
@@ -1230,6 +1517,7 @@ pub fn run() {
             open_external_url,
             install_duckstation_auto,
             install_pcsx2_brew,
+            install_emulator_cask,
             get_pcsx2_bios_status,
             open_finder_folder,
             open_emulator_gui,

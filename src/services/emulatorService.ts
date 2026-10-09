@@ -1,13 +1,23 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { GameItem } from '../data/sampleGames';
+import type { GameItem, PlatformType } from '../data/sampleGames';
 
 export interface AppConfig {
   ps1_rom_dir: string;
   ps2_rom_dir: string;
   ps3_rom_dir: string;
+  switch_rom_dir: string;
+  snes_rom_dir: string;
+  nes_rom_dir: string;
+  gba_rom_dir: string;
+  gbc_rom_dir: string;
+  gb_rom_dir: string;
   duckstation_path?: string | null;
   pcsx2_path?: string | null;
   rpcs3_path?: string | null;
+  ryujinx_path?: string | null;
+  snes9x_path?: string | null;
+  mesen_path?: string | null;
+  mgba_path?: string | null;
   favorites: string[];
   recent_games: string[];
 }
@@ -19,6 +29,14 @@ export interface EmulatorStatus {
   ps2_path: string;
   ps3_installed: boolean;
   ps3_path: string;
+  switch_installed: boolean;
+  switch_path: string;
+  snes_installed: boolean;
+  snes_path: string;
+  nes_installed: boolean;
+  nes_path: string;
+  mgba_installed: boolean;
+  mgba_path: string;
 }
 
 export interface ScrapeResult {
@@ -65,10 +83,19 @@ export async function getPlatformInfo(): Promise<PlatformInfo> {
 
 export async function fetchConfig(): Promise<AppConfig> {
   if (!isTauri()) {
+    const isWin = typeof navigator !== 'undefined' && /windows/i.test(navigator.userAgent);
+    const base = isWin ? 'C:\\Games\\ROMs' : '~/Games/ROMs';
+    const sep = isWin ? '\\' : '/';
     return {
-      ps1_rom_dir: '~/Games/ROMs/PS1',
-      ps2_rom_dir: '~/Games/ROMs/PS2',
-      ps3_rom_dir: '~/Games/ROMs/PS3',
+      ps1_rom_dir: `${base}${sep}PS1`,
+      ps2_rom_dir: `${base}${sep}PS2`,
+      ps3_rom_dir: `${base}${sep}PS3`,
+      switch_rom_dir: `${base}${sep}Switch`,
+      snes_rom_dir: `${base}${sep}SNES`,
+      nes_rom_dir: `${base}${sep}NES`,
+      gba_rom_dir: `${base}${sep}GBA`,
+      gbc_rom_dir: `${base}${sep}GBC`,
+      gb_rom_dir: `${base}${sep}GB`,
       favorites: [],
       recent_games: [],
     };
@@ -96,7 +123,7 @@ export async function scanLocalRoms(platform: string, dirPath: string): Promise<
     return rawGames.map((g) => ({
       id: g.id,
       title: g.title,
-      platform: g.platform as 'ps1' | 'ps2' | 'ps3',
+      platform: g.platform as PlatformType,
       path: g.path,
       cover_url: g.cover_url || getFallbackCover(g.platform),
       file_size: g.file_size,
@@ -117,6 +144,14 @@ export async function checkEmulators(): Promise<EmulatorStatus> {
       ps2_path: '/Applications/PCSX2.app',
       ps3_installed: false,
       ps3_path: '/Applications/RPCS3.app',
+      switch_installed: false,
+      switch_path: '/Applications/Ryujinx.app',
+      snes_installed: false,
+      snes_path: '/Applications/Snes9x.app',
+      nes_installed: false,
+      nes_path: '/Applications/Mesen.app',
+      mgba_installed: false,
+      mgba_path: '/Applications/mGBA.app',
     };
   }
   return await invoke<EmulatorStatus>('check_emulators_installed');
@@ -187,6 +222,18 @@ export async function installPcsx2Brew(): Promise<{ success: boolean; message: s
   }
   try {
     const res = await invoke<string>('install_pcsx2_brew');
+    return { success: true, message: res };
+  } catch (err) {
+    return { success: false, message: String(err) };
+  }
+}
+
+export async function installEmulatorCask(emulator: string): Promise<{ success: boolean; message: string }> {
+  if (!isTauri()) {
+    return { success: false, message: 'Disponível apenas no aplicativo nativo.' };
+  }
+  try {
+    const res = await invoke<string>('install_emulator_cask', { emulator });
     return { success: true, message: res };
   } catch (err) {
     return { success: false, message: String(err) };
@@ -264,6 +311,18 @@ function getFallbackCover(platform: string): string {
       return 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1r3d.jpg';
     case 'ps3':
       return 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1r7f.jpg';
+    case 'switch':
+      return 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1m59.jpg';
+    case 'snes':
+      return 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x8a.jpg';
+    case 'nes':
+      return 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1y7m.jpg';
+    case 'gba':
+      return 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x8e.jpg';
+    case 'gbc':
+      return 'https://images.igdb.com/igdb/image/upload/t_cover_big/co23t6.jpg';
+    case 'gb':
+      return 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x86.jpg';
     default:
       return '';
   }

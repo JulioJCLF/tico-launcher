@@ -3,7 +3,7 @@ import { SAMPLE_GAMES } from './data/sampleGames';
 import type { GameItem } from './data/sampleGames';
 import { useGamepad } from './hooks/useGamepad';
 import { sfx } from './utils/sfx';
-import { Header } from './components/Header';
+import { Header, type TabType } from './components/Header';
 import { HeroDetails } from './components/HeroDetails';
 import { GameCard } from './components/GameCard';
 import { ControllerHUD } from './components/ControllerHUD';
@@ -20,7 +20,7 @@ import {
 } from './services/emulatorService';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'all' | 'ps1' | 'ps2' | 'ps3'>('all');
+  const [activeTab, setActiveTab] = useState<TabType>('all');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [localGames, setLocalGames] = useState<GameItem[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -35,6 +35,12 @@ export function App() {
     ps1_rom_dir: '~/Games/ROMs/PS1',
     ps2_rom_dir: '~/Games/ROMs/PS2',
     ps3_rom_dir: '~/Games/ROMs/PS3',
+    switch_rom_dir: '~/Games/ROMs/Switch',
+    snes_rom_dir: '~/Games/ROMs/SNES',
+    nes_rom_dir: '~/Games/ROMs/NES',
+    gba_rom_dir: '~/Games/ROMs/GBA',
+    gbc_rom_dir: '~/Games/ROMs/GBC',
+    gb_rom_dir: '~/Games/ROMs/GB',
     favorites: [],
     recent_games: [],
   });
@@ -46,6 +52,14 @@ export function App() {
     ps2_path: '/Applications/PCSX2.app',
     ps3_installed: false,
     ps3_path: '/Applications/RPCS3.app',
+    switch_installed: false,
+    switch_path: '/Applications/Ryujinx.app',
+    snes_installed: false,
+    snes_path: '/Applications/Snes9x.app',
+    nes_installed: false,
+    nes_path: '/Applications/Mesen.app',
+    mgba_installed: false,
+    mgba_path: '/Applications/mGBA.app',
   });
 
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -79,12 +93,18 @@ export function App() {
   const scanAllFolders = useCallback(async (currentConfig: AppConfig) => {
     showNotification('Escaneando pastas de ROMs...');
     try {
-      const [ps1, ps2, ps3] = await Promise.all([
+      const [ps1, ps2, ps3, sw, snes, nes, gba, gbc, gb] = await Promise.all([
         scanLocalRoms('ps1', currentConfig.ps1_rom_dir),
         scanLocalRoms('ps2', currentConfig.ps2_rom_dir),
         scanLocalRoms('ps3', currentConfig.ps3_rom_dir),
+        scanLocalRoms('switch', currentConfig.switch_rom_dir),
+        scanLocalRoms('snes', currentConfig.snes_rom_dir),
+        scanLocalRoms('nes', currentConfig.nes_rom_dir),
+        scanLocalRoms('gba', currentConfig.gba_rom_dir),
+        scanLocalRoms('gbc', currentConfig.gbc_rom_dir),
+        scanLocalRoms('gb', currentConfig.gb_rom_dir),
       ]);
-      const combined = [...ps1, ...ps2, ...ps3];
+      const combined = [...ps1, ...ps2, ...ps3, ...sw, ...snes, ...nes, ...gba, ...gbc, ...gb];
       if (combined.length > 0) {
         setLocalGames(combined);
         showNotification(`✓ ${combined.length} jogos encontrados nas suas pastas!`);
@@ -169,6 +189,10 @@ export function App() {
     if (selectedGame.platform === 'ps1') customPath = config.duckstation_path || null;
     if (selectedGame.platform === 'ps2') customPath = config.pcsx2_path || null;
     if (selectedGame.platform === 'ps3') customPath = config.rpcs3_path || null;
+    if (selectedGame.platform === 'switch') customPath = config.ryujinx_path || null;
+    if (selectedGame.platform === 'snes') customPath = config.snes9x_path || null;
+    if (selectedGame.platform === 'nes') customPath = config.mesen_path || null;
+    if (['gba', 'gbc', 'gb'].includes(selectedGame.platform)) customPath = config.mgba_path || null;
 
     const result = await launchGameRom(selectedGame.platform, selectedGame.path, customPath);
     setIsLaunching(false);
@@ -198,7 +222,7 @@ export function App() {
   // Cycle platform tabs (L1 / R1)
   const handleTabCycle = useCallback((direction: 'next' | 'prev') => {
     sfx.playTab();
-    const order: Array<'all' | 'ps1' | 'ps2' | 'ps3'> = ['all', 'ps1', 'ps2', 'ps3'];
+    const order: TabType[] = ['all', 'switch', 'snes', 'nes', 'gba', 'gbc', 'gb', 'ps1', 'ps2', 'ps3'];
     const curIdx = order.indexOf(activeTab);
     let nextIdx = direction === 'next' ? curIdx + 1 : curIdx - 1;
     if (nextIdx >= order.length) nextIdx = 0;

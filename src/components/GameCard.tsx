@@ -17,6 +17,18 @@ export const GameCard: React.FC<GameCardProps> = ({
 }) => {
   const getPlatformLabel = (platform: string) => {
     switch (platform.toLowerCase()) {
+      case 'switch':
+        return 'Switch';
+      case 'snes':
+        return 'SNES';
+      case 'nes':
+        return 'NES';
+      case 'gba':
+        return 'GBA';
+      case 'gbc':
+        return 'GBC';
+      case 'gb':
+        return 'GB';
       case 'ps1':
         return 'PS1';
       case 'ps2':

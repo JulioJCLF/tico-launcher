@@ -39,6 +39,18 @@ export const HeroDetails: React.FC<HeroDetailsProps> = ({
         return 'PlayStation 2';
       case 'ps3':
         return 'PlayStation 3';
+      case 'switch':
+        return 'Nintendo Switch';
+      case 'snes':
+        return 'Super Nintendo (SNES)';
+      case 'nes':
+        return 'Nintendo (NES)';
+      case 'gba':
+        return 'Game Boy Advance';
+      case 'gbc':
+        return 'Game Boy Color';
+      case 'gb':
+        return 'Game Boy';
       default:
         return platform.toUpperCase();
     }

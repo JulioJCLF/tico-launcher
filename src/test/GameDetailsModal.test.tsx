@@ -77,4 +77,50 @@ describe('GameDetailsModal', () => {
       expect(handleClose).toHaveBeenCalledTimes(1);
     }
   });
+
+  it('renders Ryujinx for Switch and mGBA for Game Boy platforms', () => {
+    const switchMario: GameItem = {
+      id: 'switch-mario',
+      title: 'Super Mario Odyssey',
+      platform: 'switch',
+      cover_url: 'https://example.com/smo.jpg',
+      path: '/mock/smo.nsp',
+      isDemo: true,
+    };
+
+    const { rerender } = render(
+      <GameDetailsModal
+        game={switchMario}
+        controllerType="playstation"
+        isFavorite={false}
+        onToggleFavorite={() => {}}
+        onLaunch={() => {}}
+        onClose={() => {}}
+      />
+    );
+
+    expect(screen.getByText(/Ryujinx/)).toBeInTheDocument();
+
+    const gbaMario: GameItem = {
+      id: 'gba-mario',
+      title: 'Super Mario Advance 4',
+      platform: 'gba',
+      cover_url: 'https://example.com/sma4.jpg',
+      path: '/mock/sma4.gba',
+      isDemo: true,
+    };
+
+    rerender(
+      <GameDetailsModal
+        game={gbaMario}
+        controllerType="playstation"
+        isFavorite={false}
+        onToggleFavorite={() => {}}
+        onLaunch={() => {}}
+        onClose={() => {}}
+      />
+    );
+
+    expect(screen.getByText(/mGBA/)).toBeInTheDocument();
+  });
 });

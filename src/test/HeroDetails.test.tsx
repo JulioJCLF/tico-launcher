@@ -89,4 +89,50 @@ describe('HeroDetails', () => {
 
     expect(screen.getByText('Iniciando emulador...')).toBeInTheDocument();
   });
+
+  it('correctly labels Nintendo platforms including Switch and SNES', () => {
+    const marioSwitch: GameItem = {
+      id: 'switch-mario-odyssey',
+      title: 'Super Mario Odyssey',
+      platform: 'switch',
+      cover_url: 'https://example.com/smo.jpg',
+      path: '/mock/smo.nsp',
+      isDemo: true,
+    };
+
+    const { rerender } = render(
+      <HeroDetails
+        game={marioSwitch}
+        controllerType="playstation"
+        onLaunch={() => {}}
+        onOpenDetails={() => {}}
+        isLaunching={false}
+        statusMessage={null}
+      />
+    );
+
+    expect(screen.getByText('Nintendo Switch')).toBeInTheDocument();
+
+    const marioSnes: GameItem = {
+      id: 'snes-smw',
+      title: 'Super Mario World',
+      platform: 'snes',
+      cover_url: 'https://example.com/smw.jpg',
+      path: '/mock/smw.sfc',
+      isDemo: true,
+    };
+
+    rerender(
+      <HeroDetails
+        game={marioSnes}
+        controllerType="playstation"
+        onLaunch={() => {}}
+        onOpenDetails={() => {}}
+        isLaunching={false}
+        statusMessage={null}
+      />
+    );
+
+    expect(screen.getByText('Super Nintendo (SNES)')).toBeInTheDocument();
+  });
 });

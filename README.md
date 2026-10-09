@@ -2,15 +2,16 @@
 
 Front-end minimalista, ultraleve e console-first inspirado no **Tico** do Nintendo Switch, construído para **macOS** (Apple Silicon / Intel) e **Windows** (x64) com **Tauri 2**, **React 19**, **Tailwind CSS** e **Rust**.
 
-Projetado para rodar com alta performance e sem distrações títulos de **PlayStation 1**, **PlayStation 2** e **PlayStation 3** com suporte completo a controles de videogame (DualShock 4 / PS4 e XInput / Xbox).
+Projetado para rodar com alta performance e sem distrações títulos de **Nintendo Switch**, **Super Nintendo (SNES)**, **NES**, **Game Boy Advance (GBA)**, **Game Boy Color (GBC)**, **Game Boy Clássico (GB)**, além de **PlayStation 1**, **PlayStation 2** e **PlayStation 3** com suporte completo a controles de videogame (DualShock 4 / PS4 e XInput / Xbox).
 
 ---
 
 ## ✨ Recursos
 
 * 🍏 **Design Apple-like:** Efeitos de vidro fosco (*frosted glass*), anéis de seleção sutis, elevação tvOS e ambient glow baseado na arte do jogo.
+* 🍄 **Suporte Completo à Família Nintendo:** Switch, SNES, NES, GBA, GBC e GB com clássicos do Mario prontos para visualização e execução instantânea.
 * 🎮 **Gamepad First:** Navegação 100% pensada para controle. Suporte nativo a controles PlayStation (exibindo os ícones oficiais ✕, ○, ▢, △) e Xbox (A, B, X, Y).
-* 🌐 **Scraper Libretro Automático:** Baixa em segundo plano as capinhas oficiais em alta resolução direto do CDN da comunidade Libretro.
+* 🌐 **Scraper Libretro Automático:** Baixa em segundo plano as capinhas oficiais em alta resolução direto do CDN da comunidade Libretro para todas as plataformas.
 * 💾 **Gerenciador de BIOS e Configs do PS2:** Verificação integrada do status da BIOS, importação automática com 1 clique e atalhos rápidos para abrir as pastas no Finder ou Explorer.
 * ⚡ **Ultraleve e Instantâneo:** Inicialização em milissegundos, consumo de RAM inferior a 45 MB e binário nativo.
 * 🪟 **Multiplataforma Nativo:** Roda nativamente no macOS (Metal) e no Windows 10/11 (DirectX/Vulkan).
@@ -77,8 +78,8 @@ O Tico detecta dinamicamente o modelo de controle conectado e adapta a interface
 | **Voltar / Fechar** | **○ (Circle)** | **B** | `Esc` |
 | **Detalhes do Jogo** | **▢ (Square)** | **X** | `Espaço` / `I` |
 | **Favoritar Jogo** | **△ (Triangle)** | **Y** | `F` |
-| **Alternar Sistema (PS1/PS2/PS3)** | **L1** / **R1** | **LB** / **RB** | `Tab` / `Shift+Tab` |
-| **Configurações & BIOS** | **SHARE** / **SELECT** | **BACK** / **VIEW** | Clique na engrenagem |
+| **Alternar Plataformas** | **L1** / **R1** | **LB** / **RB** | `Tab` / `Shift+Tab` |
+| **Configurações & Emuladores** | **SHARE** / **SELECT** | **BACK** / **VIEW** | Clique na engrenagem |
 
 ---
 
@@ -87,16 +88,24 @@ O Tico detecta dinamicamente o modelo de controle conectado e adapta a interface
 O Tico organiza seus jogos por diretório. Você pode personalizar as pastas nas Configurações do app ou utilizar as pastas padrão:
 
 ### No macOS:
-* **PS1:** `~/Games/ROMs/PS1` (formatos: `.chd`, `.cue`, `.iso`, `.bin`, `.pbp`, `.m3u`)
-* **PS2:** `~/Games/ROMs/PS2` (formatos: `.iso`, `.chd`, `.cso`, `.gz`)
-* **PS3:** `~/Games/ROMs/PS3` (formatos: `.iso`, `.pkg`, ou pastas com `PS3_GAME/USRDIR/EBOOT.BIN`)
+* **Nintendo Switch:** `~/Games/ROMs/Switch` (`.nsp`, `.xci`)
+* **SNES:** `~/Games/ROMs/SNES` (`.sfc`, `.smc`)
+* **NES:** `~/Games/ROMs/NES` (`.nes`)
+* **GBA:** `~/Games/ROMs/GBA` (`.gba`)
+* **GBC:** `~/Games/ROMs/GBC` (`.gbc`)
+* **Game Boy:** `~/Games/ROMs/GB` (`.gb`)
+* **PlayStation 1:** `~/Games/ROMs/PS1` (`.chd`, `.cue`, `.iso`, `.pbp`)
+* **PlayStation 2:** `~/Games/ROMs/PS2` (`.iso`, `.chd`, `.cso`, `.gz`)
+* **PlayStation 3:** `~/Games/ROMs/PS3` (`.iso`, pastas com `EBOOT.BIN`)
 
 ### No Windows:
-* **PS1:** `C:\Games\ROMs\PS1` ou `%USERPROFILE%\Documents\Games\ROMs\PS1`
-* **PS2:** `C:\Games\ROMs\PS2` ou `%USERPROFILE%\Documents\Games\ROMs\PS2`
-* **PS3:** `C:\Games\ROMs\PS3` ou `%USERPROFILE%\Documents\Games\ROMs\PS3`
+* **Nintendo Switch:** `C:\Games\ROMs\Switch`
+* **SNES:** `C:\Games\ROMs\SNES`
+* **NES:** `C:\Games\ROMs\NES`
+* **GBA / GBC / GB:** `C:\Games\ROMs\GBA` (e respectivas subpastas)
+* **PS1 / PS2 / PS3:** `C:\Games\ROMs\PS1`, `PS2`, `PS3`
 
-> 💡 **Dica de Capas Locais:** Caso prefira usar suas próprias imagens, basta colocar um arquivo `.png` com o mesmo nome da ROM na pasta (ex: `Silent Hill.chd` e `Silent Hill.png`). Caso contrário, use o botão **"Buscar Capas na Web"** para baixar tudo automaticamente!
+> 💡 **Dica de Capas:** Caso prefira usar suas próprias imagens, basta colocar um arquivo `.png` com o mesmo nome da ROM na pasta (ex: `Super Mario World.sfc` e `Super Mario World.png`). Caso contrário, use o botão **"Buscar Capas na Web"** para baixar tudo automaticamente!
 
 ---
 
@@ -104,6 +113,10 @@ O Tico organiza seus jogos por diretório. Você pode personalizar as pastas nas
 
 | Console | Emulador | Instalação no macOS | Instalação no Windows |
 | :--- | :--- | :--- | :--- |
+| **Nintendo Switch** | **Ryujinx** | [Site Oficial](https://ryujinx.org/download) | `winget install Ryujinx.Ryujinx` |
+| **SNES** | **Snes9x** | `brew install --cask snes9x` ou [GitHub](https://github.com/snes9xgit/snes9x/releases) | `winget install Snes9x.Snes9x` |
+| **NES** | **Mesen / RetroArch** | `brew install --cask retroarch` ou [GitHub](https://github.com/SourMesen/Mesen2/releases) | `winget install Sour.Mesen` |
+| **GBA / GBC / GB** | **mGBA** | `brew install --cask mgba` ou [Site Oficial](https://mgba.io/downloads.html) | `winget install mGBA.mGBA` |
 | **PS1** | **DuckStation** | 1-Clique pelo app ou [GitHub](https://github.com/stenzek/duckstation/releases) | `winget install DuckStation.DuckStation` |
 | **PS2** | **PCSX2** | `brew install --cask pcsx2` ou [Site Oficial](https://pcsx2.net/downloads) | `winget install PCSX2.PCSX2` |
 | **PS3** | **RPCS3** | [Site Oficial](https://rpcs3.net/download) | `winget install RPCS3.RPCS3` |

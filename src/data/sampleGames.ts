@@ -1,7 +1,18 @@
+export type PlatformType =
+  | 'ps1'
+  | 'ps2'
+  | 'ps3'
+  | 'switch'
+  | 'snes'
+  | 'nes'
+  | 'gba'
+  | 'gbc'
+  | 'gb';
+
 export interface GameItem {
   id: string;
   title: string;
-  platform: 'ps1' | 'ps2' | 'ps3';
+  platform: PlatformType;
   path: string;
   cover_url: string;
   file_size?: string;
@@ -11,7 +22,151 @@ export interface GameItem {
 }
 
 export const SAMPLE_GAMES: GameItem[] = [
-  // PS1
+  // Nintendo Switch
+  {
+    id: 'sample_switch_mario_odyssey',
+    title: 'Super Mario Odyssey',
+    platform: 'switch',
+    path: '',
+    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1m59.jpg',
+    genre: 'Platformer / 3D Sandbox',
+    year: '2017',
+    file_size: '5.7 GB',
+    isDemo: true,
+  },
+  {
+    id: 'sample_switch_mariokart8',
+    title: 'Mario Kart 8 Deluxe',
+    platform: 'switch',
+    path: '',
+    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x3t.jpg',
+    genre: 'Kart Racing',
+    year: '2017',
+    file_size: '6.8 GB',
+    isDemo: true,
+  },
+
+  // Super Nintendo (SNES)
+  {
+    id: 'sample_snes_smw',
+    title: 'Super Mario World',
+    platform: 'snes',
+    path: '',
+    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x8a.jpg',
+    genre: 'Platformer',
+    year: '1990',
+    file_size: '512 KB',
+    isDemo: true,
+  },
+  {
+    id: 'sample_snes_yoshi_island',
+    title: "Super Mario World 2: Yoshi's Island",
+    platform: 'snes',
+    path: '',
+    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x8c.jpg',
+    genre: 'Platformer',
+    year: '1995',
+    file_size: '2 MB',
+    isDemo: true,
+  },
+
+  // NES (Nintendinho)
+  {
+    id: 'sample_nes_smb3',
+    title: 'Super Mario Bros. 3',
+    platform: 'nes',
+    path: '',
+    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1y7m.jpg',
+    genre: 'Platformer',
+    year: '1988',
+    file_size: '384 KB',
+    isDemo: true,
+  },
+  {
+    id: 'sample_nes_smb1',
+    title: 'Super Mario Bros.',
+    platform: 'nes',
+    path: '',
+    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co22ao.jpg',
+    genre: 'Platformer',
+    year: '1985',
+    file_size: '40 KB',
+    isDemo: true,
+  },
+
+  // Game Boy Advance (GBA)
+  {
+    id: 'sample_gba_sma4',
+    title: 'Super Mario Advance 4: Super Mario Bros. 3',
+    platform: 'gba',
+    path: '',
+    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x8e.jpg',
+    genre: 'Platformer',
+    year: '2003',
+    file_size: '4 MB',
+    isDemo: true,
+  },
+  {
+    id: 'sample_gba_mksc',
+    title: 'Mario Kart: Super Circuit',
+    platform: 'gba',
+    path: '',
+    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1y5q.jpg',
+    genre: 'Kart Racing',
+    year: '2001',
+    file_size: '4 MB',
+    isDemo: true,
+  },
+
+  // Game Boy Color (GBC)
+  {
+    id: 'sample_gbc_smb_deluxe',
+    title: 'Super Mario Bros. Deluxe',
+    platform: 'gbc',
+    path: '',
+    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co23t6.jpg',
+    genre: 'Platformer',
+    year: '1999',
+    file_size: '1 MB',
+    isDemo: true,
+  },
+  {
+    id: 'sample_gbc_mario_tennis',
+    title: 'Mario Tennis',
+    platform: 'gbc',
+    path: '',
+    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x7i.jpg',
+    genre: 'Sports / RPG',
+    year: '2000',
+    file_size: '2 MB',
+    isDemo: true,
+  },
+
+  // Game Boy (GB)
+  {
+    id: 'sample_gb_sml2',
+    title: 'Super Mario Land 2: 6 Golden Coins',
+    platform: 'gb',
+    path: '',
+    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x86.jpg',
+    genre: 'Platformer',
+    year: '1992',
+    file_size: '512 KB',
+    isDemo: true,
+  },
+  {
+    id: 'sample_gb_sml1',
+    title: 'Super Mario Land',
+    platform: 'gb',
+    path: '',
+    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x84.jpg',
+    genre: 'Platformer',
+    year: '1989',
+    file_size: '64 KB',
+    isDemo: true,
+  },
+
+  // PlayStation 1
   {
     id: 'sample_ps1_castlevania',
     title: 'Castlevania: Symphony of the Night',
@@ -35,28 +190,6 @@ export const SAMPLE_GAMES: GameItem[] = [
     isDemo: true,
   },
   {
-    id: 'sample_ps1_ff7',
-    title: 'Final Fantasy VII',
-    platform: 'ps1',
-    path: '',
-    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co2054.jpg',
-    genre: 'JRPG',
-    year: '1997',
-    file_size: '1.4 GB',
-    isDemo: true,
-  },
-  {
-    id: 'sample_ps1_silent_hill',
-    title: 'Silent Hill',
-    platform: 'ps1',
-    path: '',
-    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1r3k.jpg',
-    genre: 'Survival Horror',
-    year: '1999',
-    file_size: '350 MB',
-    isDemo: true,
-  },
-  {
     id: 'sample_ps1_crash',
     title: 'Crash Bandicoot 3: Warped',
     platform: 'ps1',
@@ -68,7 +201,7 @@ export const SAMPLE_GAMES: GameItem[] = [
     isDemo: true,
   },
 
-  // PS2
+  // PlayStation 2
   {
     id: 'sample_ps2_gow2',
     title: 'God of War II',
@@ -78,17 +211,6 @@ export const SAMPLE_GAMES: GameItem[] = [
     genre: 'Hack and Slash / Action',
     year: '2007',
     file_size: '7.9 GB',
-    isDemo: true,
-  },
-  {
-    id: 'sample_ps2_sh2',
-    title: 'Silent Hill 2',
-    platform: 'ps2',
-    path: '',
-    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1v9g.jpg',
-    genre: 'Psychological Horror',
-    year: '2001',
-    file_size: '3.8 GB',
     isDemo: true,
   },
   {
@@ -102,30 +224,8 @@ export const SAMPLE_GAMES: GameItem[] = [
     file_size: '2.5 GB',
     isDemo: true,
   },
-  {
-    id: 'sample_ps2_mgs3',
-    title: 'Metal Gear Solid 3: Snake Eater',
-    platform: 'ps2',
-    path: '',
-    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1r37.jpg',
-    genre: 'Stealth Action',
-    year: '2004',
-    file_size: '4.1 GB',
-    isDemo: true,
-  },
-  {
-    id: 'sample_ps2_dmc3',
-    title: "Devil May Cry 3: Dante's Awakening",
-    platform: 'ps2',
-    path: '',
-    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1r2y.jpg',
-    genre: 'Hack and Slash',
-    year: '2005',
-    file_size: '3.6 GB',
-    isDemo: true,
-  },
 
-  // PS3
+  // PlayStation 3
   {
     id: 'sample_ps3_tlou',
     title: 'The Last of Us',
@@ -146,39 +246,6 @@ export const SAMPLE_GAMES: GameItem[] = [
     genre: 'Action RPG',
     year: '2009',
     file_size: '8.2 GB',
-    isDemo: true,
-  },
-  {
-    id: 'sample_ps3_mgs4',
-    title: 'Metal Gear Solid 4: Guns of the Patriots',
-    platform: 'ps3',
-    path: '',
-    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1rcp.jpg',
-    genre: 'Stealth Action',
-    year: '2008',
-    file_size: '30 GB',
-    isDemo: true,
-  },
-  {
-    id: 'sample_ps3_rdr',
-    title: 'Red Dead Redemption',
-    platform: 'ps3',
-    path: '',
-    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1p98.jpg',
-    genre: 'Open World / Western',
-    year: '2010',
-    file_size: '9.8 GB',
-    isDemo: true,
-  },
-  {
-    id: 'sample_ps3_uncharted2',
-    title: 'Uncharted 2: Among Thieves',
-    platform: 'ps3',
-    path: '',
-    cover_url: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1rcn.jpg',
-    genre: 'Action-Adventure',
-    year: '2009',
-    file_size: '20 GB',
     isDemo: true,
   },
 ];
