@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { GameItem } from '../data/sampleGames';
 import type { ControllerType } from '../hooks/useGamepad';
 import { Play, Star, X, HardDrive, FolderOpen, Gamepad2 } from 'lucide-react';
 import { PSCross, PSTriangle, ControllerPrompt } from './icons/PlayStationIcons';
+import { getFallbackCover } from '../services/emulatorService';
 
 interface GameDetailsModalProps {
   game: GameItem;
@@ -21,6 +22,13 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
   onLaunch,
   onClose,
 }) => {
+  const fallback = getFallbackCover(game.platform);
+  const [imgSrc, setImgSrc] = useState<string>(game.cover_url || fallback);
+
+  useEffect(() => {
+    setImgSrc(game.cover_url || fallback);
+  }, [game.cover_url, fallback]);
+
   const isPS = controllerType === 'playstation';
 
   const getEmulatorName = (platform: string) => {
@@ -62,18 +70,24 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
         {/* Hero Backdrop */}
         <div className="relative h-52 w-full overflow-hidden bg-black/40">
           <img
-            src={game.cover_url}
+            src={imgSrc}
             alt={game.title}
             className="w-full h-full object-cover opacity-35 filter blur-2xl scale-125"
+            onError={() => {
+              if (fallback && imgSrc !== fallback) setImgSrc(fallback);
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/90 via-transparent to-transparent" />
 
           {/* Floating Cover Art */}
           <div className="absolute bottom-5 left-7 flex items-end gap-4">
             <img
-              src={game.cover_url}
+              src={imgSrc}
               alt={game.title}
               className="w-24 h-34 object-cover rounded-2xl shadow-2xl border border-white/20"
+              onError={() => {
+                if (fallback && imgSrc !== fallback) setImgSrc(fallback);
+              }}
             />
             <div className="mb-2">
               <span className="px-2.5 py-0.5 rounded-full bg-white/15 text-white text-[10px] font-semibold backdrop-blur-xl border border-white/15">

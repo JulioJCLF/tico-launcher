@@ -303,7 +303,7 @@ export async function importBiosFileBytes(
   }
 }
 
-function getFallbackCover(platform: string): string {
+export function getFallbackCover(platform: string): string {
   switch (platform.toLowerCase()) {
     case 'ps1':
       return 'https://images.igdb.com/igdb/image/upload/t_cover_big/co1x76.jpg';

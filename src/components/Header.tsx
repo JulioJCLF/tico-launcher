@@ -114,14 +114,26 @@ export const Header: React.FC<HeaderProps> = ({
         <div
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-medium backdrop-blur-xl transition-all ${
             controllerConnected
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+              ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300 shadow-sm'
               : 'bg-white/5 border-white/10 text-zinc-400'
           }`}
-          title={controllerConnected ? `Conectado: ${controllerName}` : 'Nenhum controle detectado'}
+          title={
+            controllerConnected
+              ? `Conectado: ${controllerName}`
+              : 'Nenhum controle detectado. Ligue seu GameSir ou pressione qualquer botão para ativar.'
+          }
         >
           <Gamepad2 className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">
-            {controllerConnected ? (isPS ? 'DualShock / PS4' : 'Xbox Controller') : 'Sem Controle'}
+            {controllerConnected
+              ? controllerName.toLowerCase().includes('gamesir')
+                ? '🎮 GameSir T4 Lite'
+                : isPS
+                ? 'DualShock / PS4'
+                : controllerName.includes('Xbox')
+                ? 'Xbox Controller'
+                : controllerName
+              : 'Pressione um botão no controle'}
           </span>
         </div>
 

@@ -17,16 +17,29 @@ export interface GamepadActions {
   onSettings?: () => void; // Share / Back
 }
 
-export function useGamepad(actions: GamepadActions) {
+export interface UseGamepadReturn {
+  connected: boolean;
+  controllerName: string;
+  controllerType: ControllerType;
+  isGameSir: boolean;
+}
+
+export function useGamepad(actions: GamepadActions): UseGamepadReturn {
   const [connected, setConnected] = useState(false);
   const [controllerName, setControllerName] = useState<string>('Nenhum controle');
-  const [controllerType, setControllerType] = useState<ControllerType>('playstation');
+  const [controllerType, setControllerType] = useState<ControllerType>('xbox');
+  const [isGameSir, setIsGameSir] = useState<boolean>(false);
 
-  // Ref to hold the latest actions so requestAnimationFrame doesn't go stale
+  // Keep references to prevent animation loop recreation
   const actionsRef = useRef(actions);
   actionsRef.current = actions;
 
-  // Track previous button states for edge-triggering (press once per tap)
+  const connectedRef = useRef(false);
+  const controllerNameRef = useRef('Nenhum controle');
+  const controllerTypeRef = useRef<ControllerType>('xbox');
+  const isGameSirRef = useRef(false);
+
+  // Track previous button states for edge-triggering
   const prevButtonsRef = useRef<{ [key: number]: boolean }>({});
 
   // Navigation repeat handling
@@ -40,80 +53,153 @@ export function useGamepad(actions: GamepadActions) {
     lastRepeatTime: 0,
   });
 
-  const detectType = useCallback((id: string): ControllerType => {
+  const parseControllerInfo = useCallback((id: string): { type: ControllerType; cleanName: string; isGameSir: boolean } => {
     const lower = id.toLowerCase();
+
+    // 1. Check for GameSir devices first (T4, T4 Lite, T4 Pro, Nova, etc.)
+    if (
+      lower.includes('gamesir') ||
+      lower.includes('t4') ||
+      lower.includes('2ec2') // GameSir Vendor ID
+    ) {
+      return {
+        type: 'xbox',
+        cleanName: 'GameSir T4 Lite',
+        isGameSir: true,
+      };
+    }
+
+    // 2. Check for Nintendo / Switch Pro Controller (Vendor 057e)
+    if (lower.includes('057e') || lower.includes('pro controller') || lower.includes('joy-con')) {
+      return {
+        type: 'xbox', // uses A, B, X, Y buttons
+        cleanName: 'Nintendo Switch Pro Controller',
+        isGameSir: false,
+      };
+    }
+
+    // 3. Check for PlayStation controllers (DualShock 4, DualSense, Sony 054c)
     if (
       lower.includes('playstation') ||
       lower.includes('dualshock') ||
       lower.includes('dualsense') ||
       lower.includes('sony') ||
-      lower.includes('wireless controller') ||
+      (lower.includes('wireless controller') && !lower.includes('xbox') && !lower.includes('gamesir')) ||
       lower.includes('054c')
     ) {
-      return 'playstation';
+      return {
+        type: 'playstation',
+        cleanName: 'PlayStation Controller',
+        isGameSir: false,
+      };
     }
-    return 'xbox';
+
+    // 4. Default to Xbox / Standard XInput layout
+    let cleanName = 'Xbox Wireless Controller';
+    if (lower.includes('xbox')) cleanName = 'Xbox Controller';
+    else if (id.trim().length > 0) cleanName = id.replace(/\(vendor:[^)]+\)/i, '').trim();
+
+    return {
+      type: 'xbox',
+      cleanName,
+      isGameSir: false,
+    };
   }, []);
 
   useEffect(() => {
-    const handleConnected = (e: GamepadEvent) => {
-      const gp = e.gamepad;
-      if (gp) {
-        setConnected(true);
-        setControllerName(gp.id);
-        setControllerType(detectType(gp.id));
+    const DEADZONE = 0.35;
+    const INITIAL_REPEAT_DELAY = 280; // ms before repeat starts
+    const REPEAT_INTERVAL = 120; // ms between repeats while held
+
+    // Helper to get all connected gamepads
+    const getActiveGamepad = (): Gamepad | null => {
+      if (typeof navigator === 'undefined' || !navigator.getGamepads) return null;
+      try {
+        const list = Array.from(navigator.getGamepads()).filter(
+          (g): g is Gamepad => g !== null && g !== undefined
+        );
+
+        // Priority 1: Gamepad with any button currently pressed or axis moved
+        const active = list.find(
+          (g) =>
+            g.buttons.some((b) => (typeof b === 'object' ? b.pressed : b === 1.0)) ||
+            g.axes.some((a) => Math.abs(a) > 0.15)
+        );
+        if (active) return active;
+
+        // Priority 2: Gamepad marked as connected
+        const connectedGp = list.find((g) => g.connected);
+        if (connectedGp) return connectedGp;
+
+        // Priority 3: First valid gamepad
+        return list[0] || null;
+      } catch {
+        return null;
       }
     };
 
-    const handleDisconnected = () => {
-      // Check if any other gamepad is still connected
-      const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-      let found = false;
-      for (const gp of gamepads) {
-        if (gp) {
+    const updateConnectionState = (gp: Gamepad | null) => {
+      if (gp) {
+        const info = parseControllerInfo(gp.id);
+        if (!connectedRef.current || controllerNameRef.current !== info.cleanName) {
+          connectedRef.current = true;
+          controllerNameRef.current = info.cleanName;
+          controllerTypeRef.current = info.type;
+          isGameSirRef.current = info.isGameSir;
+
           setConnected(true);
-          setControllerName(gp.id);
-          setControllerType(detectType(gp.id));
-          found = true;
-          break;
+          setControllerName(info.cleanName);
+          setControllerType(info.type);
+          setIsGameSir(info.isGameSir);
+        }
+      } else {
+        if (connectedRef.current) {
+          connectedRef.current = false;
+          controllerNameRef.current = 'Nenhum controle';
+          isGameSirRef.current = false;
+
+          setConnected(false);
+          setControllerName('Nenhum controle');
+          setIsGameSir(false);
         }
       }
-      if (!found) {
-        setConnected(false);
-        setControllerName('Nenhum controle');
-      }
+    };
+
+    // Standard event listeners
+    const handleConnected = (e: GamepadEvent) => {
+      if (e.gamepad) updateConnectionState(e.gamepad);
+    };
+
+    const handleDisconnected = () => {
+      const remaining = getActiveGamepad();
+      updateConnectionState(remaining);
     };
 
     window.addEventListener('gamepadconnected', handleConnected);
     window.addEventListener('gamepaddisconnected', handleDisconnected);
 
-    // Initial check
-    const initialGps = navigator.getGamepads ? navigator.getGamepads() : [];
-    for (const gp of initialGps) {
-      if (gp) {
-        setConnected(true);
-        setControllerName(gp.id);
-        setControllerType(detectType(gp.id));
-        break;
-      }
-    }
+    // In WebKit / macOS WKWebView, Gamepad API activates on first user interaction
+    const handleUserInteraction = () => {
+      const gp = getActiveGamepad();
+      if (gp) updateConnectionState(gp);
+    };
+
+    window.addEventListener('pointerdown', handleUserInteraction, { passive: true });
+    window.addEventListener('keydown', handleUserInteraction, { passive: true });
+    window.addEventListener('focus', handleUserInteraction);
+
+    // Initial check on mount
+    const initialGp = getActiveGamepad();
+    if (initialGp) updateConnectionState(initialGp);
 
     // Polling loop
     let animId: number;
-    const DEADZONE = 0.35;
-    const INITIAL_REPEAT_DELAY = 300; // ms before repeat starts
-    const REPEAT_INTERVAL = 130; // ms between repeats while held
 
     const poll = (time: number) => {
-      const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-      const gp = gamepads[0] || gamepads[1] || gamepads[2] || gamepads[3];
+      const gp = getActiveGamepad();
 
       if (gp) {
-        if (!connected) {
-          setConnected(true);
-          setControllerName(gp.id);
-          setControllerType(detectType(gp.id));
-        }
+        updateConnectionState(gp);
 
         const act = actionsRef.current;
         const prev = prevButtonsRef.current;
@@ -127,36 +213,52 @@ export function useGamepad(actions: GamepadActions) {
           return pressed && !wasPressed;
         };
 
-        // Standard Face & Shoulder buttons
-        if (isJustPressed(0)) act.onSelect?.(); // Cross / A
-        if (isJustPressed(1)) act.onBack?.(); // Circle / B
-        if (isJustPressed(2)) act.onDetails?.(); // Square / X
-        if (isJustPressed(3)) act.onFavorite?.(); // Triangle / Y
+        // Standard Face Buttons (A, B, X, Y or Cross, Circle, Square, Triangle)
+        if (isJustPressed(0)) act.onSelect?.(); // A / Cross
+        if (isJustPressed(1)) act.onBack?.(); // B / Circle
+        if (isJustPressed(2)) act.onDetails?.(); // X / Square
+        if (isJustPressed(3)) act.onFavorite?.(); // Y / Triangle
+
+        // Shoulder & Triggers
         if (isJustPressed(4)) act.onPrevTab?.(); // L1 / LB
         if (isJustPressed(5)) act.onNextTab?.(); // R1 / RB
-        if (isJustPressed(8)) act.onSettings?.(); // Share / Back
-        if (isJustPressed(9)) act.onMenu?.(); // Options / Start
 
-        // Direction navigation (D-Pad + Left Stick)
+        // Back / View / Share & Start / Menu / Options
+        if (isJustPressed(8)) act.onSettings?.(); // Back / Share
+        if (isJustPressed(9)) act.onMenu?.(); // Start / Options
+        if (isJustPressed(16)) act.onSettings?.(); // Guide / Home
+
+        // Direction navigation (Supports D-Pad buttons, Analog Stick, and GameSir D-Pad Axes)
         let currentDir: 'left' | 'right' | 'up' | 'down' | null = null;
 
-        // D-Pad buttons: 12 = up, 13 = down, 14 = left, 15 = right
+        // Standard D-Pad buttons: 12 = up, 13 = down, 14 = left, 15 = right
         const dUp = gp.buttons[12]?.pressed;
         const dDown = gp.buttons[13]?.pressed;
         const dLeft = gp.buttons[14]?.pressed;
         const dRight = gp.buttons[15]?.pressed;
 
-        // Left Analog Stick
-        const stickX = gp.axes[0] || 0;
-        const stickY = gp.axes[1] || 0;
+        // Left Analog Stick (Axes 0, 1)
+        const stickX = gp.axes[0] ?? 0;
+        const stickY = gp.axes[1] ?? 0;
 
-        if (dLeft || stickX < -DEADZONE) {
+        // Secondary D-Pad Axes (Axes 4, 5 common in GameSir Mac/DInput modes)
+        const altDpadX = gp.axes[4] ?? 0;
+        const altDpadY = gp.axes[5] ?? 0;
+
+        // Hat switch (Axis 9)
+        const hat = gp.axes[9];
+        const hatUp = hat !== undefined && hat >= -1.05 && hat <= -0.65;
+        const hatRight = hat !== undefined && hat >= -0.45 && hat <= -0.15;
+        const hatDown = hat !== undefined && hat >= 0.05 && hat <= 0.35;
+        const hatLeft = hat !== undefined && hat >= 0.65 && hat <= 0.95;
+
+        if (dLeft || stickX < -DEADZONE || altDpadX < -0.5 || hatLeft) {
           currentDir = 'left';
-        } else if (dRight || stickX > DEADZONE) {
+        } else if (dRight || stickX > DEADZONE || altDpadX > 0.5 || hatRight) {
           currentDir = 'right';
-        } else if (dUp || stickY < -DEADZONE) {
+        } else if (dUp || stickY < -DEADZONE || altDpadY < -0.5 || hatUp) {
           currentDir = 'up';
-        } else if (dDown || stickY > DEADZONE) {
+        } else if (dDown || stickY > DEADZONE || altDpadY > 0.5 || hatDown) {
           currentDir = 'down';
         }
 
@@ -190,6 +292,8 @@ export function useGamepad(actions: GamepadActions) {
         } else {
           nav.direction = null;
         }
+      } else {
+        updateConnectionState(null);
       }
 
       animId = requestAnimationFrame(poll);
@@ -201,12 +305,16 @@ export function useGamepad(actions: GamepadActions) {
       cancelAnimationFrame(animId);
       window.removeEventListener('gamepadconnected', handleConnected);
       window.removeEventListener('gamepaddisconnected', handleDisconnected);
+      window.removeEventListener('pointerdown', handleUserInteraction);
+      window.removeEventListener('keydown', handleUserInteraction);
+      window.removeEventListener('focus', handleUserInteraction);
     };
-  }, [detectType, connected]);
+  }, [parseControllerInfo]);
 
   return {
     connected,
     controllerName,
     controllerType,
+    isGameSir,
   };
 }

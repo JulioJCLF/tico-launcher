@@ -1022,19 +1022,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <hr className="border-white/10" />
 
           {/* Gamepad Info */}
-          <div className="p-4 rounded-2xl bg-black/20 border border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Gamepad className="w-5 h-5 text-zinc-300 opacity-80" />
-              <div>
-                <div className="text-xs font-semibold text-white">Controle Conectado</div>
-                <div className="text-[11px] text-zinc-400 font-mono truncate max-w-sm">
-                  {controllerConnected ? controllerName : 'Nenhum controle detectado'}
+          <div className="p-4 rounded-2xl bg-black/20 border border-white/5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Gamepad className="w-5 h-5 text-zinc-300 opacity-80" />
+                <div>
+                  <div className="text-xs font-semibold text-white">Controle Conectado</div>
+                  <div className="text-[11px] text-zinc-400 font-mono truncate max-w-sm">
+                    {controllerConnected ? controllerName : 'Nenhum controle detectado no momento'}
+                  </div>
                 </div>
               </div>
+              <span className={`px-3 py-1 rounded-full text-[10px] font-semibold border ${
+                controllerConnected
+                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                  : 'bg-white/10 border-white/10 text-zinc-400'
+              }`}>
+                {controllerConnected
+                  ? controllerName.toLowerCase().includes('gamesir')
+                    ? '✓ GameSir T4 Lite Ativo'
+                    : isPS
+                    ? '✓ Modo DualShock 4'
+                    : '✓ Modo XInput / Xbox'
+                  : 'Desconectado'}
+              </span>
             </div>
-            <span className="px-3 py-1 rounded-full text-[10px] font-medium bg-white/10 border border-white/10 text-zinc-200">
-              {isPS ? 'Modo DualShock 4' : 'Modo XInput'}
-            </span>
+
+            {/* GameSir T4 Lite Pairing Helper */}
+            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-[11px] text-zinc-300 space-y-1">
+              <div className="font-semibold text-white flex items-center gap-1.5">
+                <span>🎮 Dica para GameSir T4 Lite:</span>
+              </div>
+              <p className="text-zinc-400 leading-relaxed">
+                • <strong>No Mac (Bluetooth):</strong> Ligue segurando <code className="text-zinc-200 bg-white/10 px-1 rounded">Home + B</code> (Modo Xbox Wireless / Apple Arcade) ou <code className="text-zinc-200 bg-white/10 px-1 rounded">Home + Y</code> (Modo Switch).<br />
+                • <strong>No Windows (Cabo / Dongle):</strong> Ligue segurando <code className="text-zinc-200 bg-white/10 px-1 rounded">Home + X</code> (Modo XInput nativo).<br />
+                • <strong>Importante:</strong> Após parear, <span className="text-emerald-300 font-medium">pressione qualquer botão ou direcional</span> no controle para que o macOS autorize o sinal de entrada na janela.
+              </p>
+            </div>
           </div>
         </div>
 

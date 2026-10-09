@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { GameItem } from '../data/sampleGames';
-import { Star } from 'lucide-react';
+import { Star, Gamepad2 } from 'lucide-react';
+import { getFallbackCover } from '../services/emulatorService';
 
 interface GameCardProps {
   game: GameItem;
@@ -15,6 +16,23 @@ export const GameCard: React.FC<GameCardProps> = ({
   isFavorite,
   onClick,
 }) => {
+  const fallback = getFallbackCover(game.platform);
+  const [imgSrc, setImgSrc] = useState<string>(game.cover_url || fallback);
+  const [imgFailed, setImgFailed] = useState<boolean>(false);
+
+  useEffect(() => {
+    setImgSrc(game.cover_url || fallback);
+    setImgFailed(false);
+  }, [game.cover_url, fallback]);
+
+  const handleImgError = () => {
+    if (imgSrc !== fallback && fallback) {
+      setImgSrc(fallback);
+    } else {
+      setImgFailed(true);
+    }
+  };
+
   const getPlatformLabel = (platform: string) => {
     switch (platform.toLowerCase()) {
       case 'switch':
@@ -62,15 +80,24 @@ export const GameCard: React.FC<GameCardProps> = ({
         }`}
       >
         {/* Cover Art */}
-        <img
-          src={game.cover_url}
-          alt={game.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-          onError={(e) => {
-            (e.target as HTMLElement).style.display = 'none';
-          }}
-        />
+        {!imgFailed ? (
+          <img
+            src={imgSrc}
+            alt={game.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            onError={handleImgError}
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br from-zinc-800 to-zinc-950 text-center select-none">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center mb-3 border border-white/10 shadow-inner">
+              <Gamepad2 className="w-6 h-6 text-white/50" />
+            </div>
+            <span className="text-[11px] font-semibold text-white/80 line-clamp-3 leading-snug px-1">
+              {game.title}
+            </span>
+          </div>
+        )}
 
         {/* Subtle Bottom Ambient Gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-3.5 pointer-events-none">

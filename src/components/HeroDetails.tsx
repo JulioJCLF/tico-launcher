@@ -3,6 +3,7 @@ import type { GameItem } from '../data/sampleGames';
 import type { ControllerType } from '../hooks/useGamepad';
 import { Play, Info, HardDrive, Calendar, Tag } from 'lucide-react';
 import { PSCross, ControllerPrompt } from './icons/PlayStationIcons';
+import { getFallbackCover } from '../services/emulatorService';
 
 interface HeroDetailsProps {
   game: GameItem | null;
@@ -61,7 +62,7 @@ export const HeroDetails: React.FC<HeroDetailsProps> = ({
       {/* Soft Ambient Artwork Glow (Apple TV Style) */}
       <div
         className="absolute inset-0 -z-10 bg-cover bg-center transition-all duration-700 ease-out opacity-20 filter blur-3xl scale-125 pointer-events-none"
-        style={{ backgroundImage: `url(${game.cover_url})` }}
+        style={{ backgroundImage: `url(${game.cover_url || getFallbackCover(game.platform)})` }}
       />
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#0d0e12] via-[#0d0e12]/70 to-transparent pointer-events-none" />
 

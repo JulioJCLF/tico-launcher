@@ -317,7 +317,42 @@ fn get_libretro_repo_name(platform: &str) -> Option<&'static str> {
     }
 }
 
+fn get_switch_cover_url(clean_title: &str) -> Option<String> {
+    let lower = clean_title.to_lowercase();
+    if lower.contains("odyssey") {
+        return Some("https://images.igdb.com/igdb/image/upload/t_cover_big/co1m59.jpg".to_string());
+    }
+    if lower.contains("mario kart") {
+        return Some("https://images.igdb.com/igdb/image/upload/t_cover_big/co1x3t.jpg".to_string());
+    }
+    if lower.contains("3d world") {
+        return Some("https://images.igdb.com/igdb/image/upload/t_cover_big/co2k34.jpg".to_string());
+    }
+    if lower.contains("wonder") {
+        return Some("https://images.igdb.com/igdb/image/upload/t_cover_big/co6qg5.jpg".to_string());
+    }
+    if lower.contains("smash bros") {
+        return Some("https://images.igdb.com/igdb/image/upload/t_cover_big/co1r3q.jpg".to_string());
+    }
+    if lower.contains("breath of the wild") {
+        return Some("https://images.igdb.com/igdb/image/upload/t_cover_big/co3p2d.jpg".to_string());
+    }
+    if lower.contains("tears of the kingdom") {
+        return Some("https://images.igdb.com/igdb/image/upload/t_cover_big/co5vmg.jpg".to_string());
+    }
+    None
+}
+
 fn get_cover_candidates(platform: &str, file_stem: &str, clean_title: &str) -> Vec<String> {
+    if platform.to_lowercase() == "switch" {
+        let mut switch_urls = Vec::new();
+        if let Some(known_url) = get_switch_cover_url(clean_title) {
+            switch_urls.push(known_url);
+        }
+        switch_urls.push("https://images.igdb.com/igdb/image/upload/t_cover_big/co1m59.jpg".to_string());
+        return switch_urls;
+    }
+
     let repo = match get_libretro_repo_name(platform) {
         Some(r) => r,
         None => return Vec::new(),
@@ -332,10 +367,29 @@ fn get_cover_candidates(platform: &str, file_stem: &str, clean_title: &str) -> V
     names.push(format!("{}.png", file_stem));
     names.push(format!("{} (USA).png", clean_title));
     names.push(format!("{} (Europe).png", clean_title));
+    names.push(format!("{} (World).png", clean_title));
     names.push(format!("{} (Japan).png", clean_title));
     names.push(format!("{}.png", clean_title));
 
-    names
+    if clean_title.contains(':') {
+        let with_dash = clean_title.replace(": ", " - ").replace(':', " - ");
+        names.push(format!("{} (USA).png", with_dash));
+        names.push(format!("{} (Europe).png", with_dash));
+        names.push(format!("{}.png", with_dash));
+
+        let with_underscore = clean_title.replace(": ", "_").replace(':', "_");
+        names.push(format!("{} (USA).png", with_underscore));
+        names.push(format!("{}.png", with_underscore));
+    }
+
+    let mut unique_names = Vec::new();
+    for n in names {
+        if !unique_names.contains(&n) {
+            unique_names.push(n);
+        }
+    }
+
+    unique_names
         .into_iter()
         .map(|name| format!("{}/{}", base, url_encode(&name)))
         .collect()
@@ -347,7 +401,11 @@ fn try_download_cover(platform: &str, file_stem: &str, clean_title: &str) -> Opt
     let target_path = covers_dir.join(format!("{}.png", file_stem));
 
     if target_path.exists() {
-        return Some(target_path);
+        if let Ok(meta) = target_path.metadata() {
+            if meta.len() > 1000 {
+                return Some(target_path);
+            }
+        }
     }
 
     let candidates = get_cover_candidates(platform, file_stem, clean_title);
@@ -357,7 +415,7 @@ fn try_download_cover(platform: &str, file_stem: &str, clean_title: &str) -> Opt
             .arg("-f")
             .arg("-L")
             .arg("--max-time")
-            .arg("4")
+            .arg("3")
             .arg(&url)
             .arg("-o")
             .arg(&target_path)
@@ -378,9 +436,21 @@ fn try_download_cover(platform: &str, file_stem: &str, clean_title: &str) -> Opt
     None
 }
 
-fn format_asset_url(file_path: &Path) -> String {
-    let normalized = file_path.to_string_lossy().replace('\\', "/");
-    format!("asset://localhost/{}", normalized)
+fn read_file_as_data_url(file_path: &Path) -> Option<String> {
+    if let Ok(bytes) = fs::read(file_path) {
+        if !bytes.is_empty() && bytes.len() < 15_000_000 {
+            let ext = file_path.extension().and_then(|e| e.to_str()).map(|s| s.to_lowercase()).unwrap_or_default();
+            let mime = match ext.as_str() {
+                "jpg" | "jpeg" => "image/jpeg",
+                "webp" => "image/webp",
+                _ => "image/png",
+            };
+            use base64::Engine;
+            let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+            return Some(format!("data:{};base64,{}", mime, b64));
+        }
+    }
+    None
 }
 
 #[tauri::command]
@@ -429,21 +499,26 @@ fn scan_roms(platform: String, dir_path: String) -> Vec<Game> {
                         };
 
                         let mut cover_url = None;
+                        // 1. Check if ROM has an explicit adjacent image file
                         for img_ext in &["png", "jpg", "jpeg", "webp"] {
                             let img_path = path.with_extension(img_ext);
                             if img_path.exists() {
-                                cover_url = Some(format_asset_url(&img_path));
-                                break;
+                                cover_url = read_file_as_data_url(&img_path);
+                                if cover_url.is_some() {
+                                    break;
+                                }
                             }
                         }
 
+                        // 2. Check if a downloaded cover exists in local cache
                         if cover_url.is_none() {
                             let cached_path = covers_cache_dir.join(format!("{}.png", file_stem));
                             if cached_path.exists() {
-                                cover_url = Some(format_asset_url(&cached_path));
+                                cover_url = read_file_as_data_url(&cached_path);
                             }
                         }
 
+                        // 3. Fallback to Libretro primary candidate
                         if cover_url.is_none() {
                             let candidates = get_cover_candidates(&platform, &file_stem, &title);
                             if let Some(primary_url) = candidates.first() {
@@ -470,7 +545,14 @@ fn scan_roms(platform: String, dir_path: String) -> Vec<Game> {
                     let mut cover_url = None;
                     let icon_path = path.join("PS3_GAME").join("ICON0.PNG");
                     if icon_path.exists() {
-                        cover_url = Some(format_asset_url(&icon_path));
+                        cover_url = read_file_as_data_url(&icon_path);
+                    }
+
+                    if cover_url.is_none() {
+                        let cached_path = covers_cache_dir.join(format!("{}.png", folder_name));
+                        if cached_path.exists() {
+                            cover_url = read_file_as_data_url(&cached_path);
+                        }
                     }
 
                     if cover_url.is_none() {
