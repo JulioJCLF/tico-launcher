@@ -137,11 +137,15 @@ export function App() {
   // Initial load
   useEffect(() => {
     async function init() {
-      const loadedConfig = await fetchConfig();
-      setConfig(loadedConfig);
-      const emuStat = await checkEmulators();
-      setEmulatorStatus(emuStat);
-      await scanAllFolders(loadedConfig);
+      try {
+        const loadedConfig = await fetchConfig();
+        setConfig(loadedConfig);
+        const emuStat = await checkEmulators();
+        setEmulatorStatus(emuStat);
+        await scanAllFolders(loadedConfig);
+      } catch (err) {
+        console.error('Falha na inicialização do Tico:', err);
+      }
     }
     init();
   }, [scanAllFolders]);

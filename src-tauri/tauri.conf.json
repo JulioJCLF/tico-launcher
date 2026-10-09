@@ -13,14 +13,14 @@
     "windows": [
       {
         "title": "Tico",
+        "label": "main",
         "width": 1280,
         "height": 780,
         "minWidth": 960,
         "minHeight": 600,
         "resizable": true,
         "fullscreen": false,
-        "titleBarStyle": "Overlay",
-        "hiddenTitle": true
+        "devtools": true
       }
     ],
     "security": {

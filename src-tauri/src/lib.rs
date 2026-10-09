@@ -1579,6 +1579,13 @@ fn import_bios_file_bytes(filename: String, base64_content: String) -> Result<St
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            {
+                use tauri::Manager;
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.set_title_bar_style(tauri::TitleBarStyle::Overlay);
+                }
+            }
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
